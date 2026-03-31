@@ -3,531 +3,478 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>蘭州國中段考時程顯示板</title>
+    <title>蘭州國中段考時程顯示</title>
     <style>
+        /* ================= 全域與蘭州國中官網配色設定 ================= */
         :root {
-            --bg-color: #121212;
-            --panel-bg: #1e1e1e;
-            --text-main: #f5f5f5;
-            --text-muted: #a0a0a0;
-            --accent: #3b82f6;
-            --accent-hover: #2563eb;
-            --highlight-bg: #10b981; /* 醒目提示背景色 (綠色) */
-            --highlight-text: #ffffff;
-            --border-color: #333333;
-            --danger: #ef4444;
+            /* 蘭州國中官網風格 (白底、蘭州藍、橘黃點綴) */
+            --bg-color: #ffffff;       /* 純白 (背景) */
+            --panel-bg: #ffffff;       /* 區塊背景純白 */
+            --text-main: #333333;      /* 深灰 (主文字，提升易讀性) */
+            --text-muted: #666666;     /* 中灰 (次要文字) */
+            --accent-color: #2b70a5;   /* 蘭州藍 (官網導覽列主色) */
+            --accent-hover: #1e527c;   /* 深蘭州藍 (按鈕懸停) */
+            --highlight-bg: #fff8eb;   /* 淺暖黃 (正在進行的考試高亮底色) */
+            --highlight-text: #333333; /* 高亮時的文字顏色 */
+            --highlight-border: #f2a62c; /* 活力橘黃 (官網箭頭色，用於強調) */
+            --btn-bg: #f4f7fa;         /* 淺灰藍 (一般按鈕底色) */
+            --btn-hover: #e2eaf2;      /* 淺灰藍加深 (一般按鈕懸停) */
+            --modal-bg: #ffffff;       /* 彈出視窗背景 */
+            --border-color: #dce3e9;   /* 邊框顏色 (淺灰藍) */
+            --element-bg: #f8fbff;     /* 內部元素背景 (如時程列、輸入框，帶極淡的藍) */
+            --table-th-bg: #eaf1f8;    /* 表格標題背景 */
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: "Helvetica Neue", "Microsoft JhengHei", Arial, sans-serif;
+        /* 限定標楷體系列 */
+        * { 
+            box-sizing: border-box; 
+            font-family: 'BiauKai', 'DFKai-SB', '楷體', STKaiti, serif; 
         }
 
         body {
+            margin: 0;
+            padding: 0;
             background-color: var(--bg-color);
             color: var(--text-main);
-            display: flex;
             height: 100vh;
-            width: 100vw;
-            overflow: hidden; /* 防止主畫面滾動，確保一頁呈現 */
-        }
-
-        /* 按鈕共用樣式 */
-        .btn {
-            background-color: #333333;
-            color: var(--text-main);
-            border: none;
-            padding: 1.5vh 1.5vw;
-            font-size: clamp(16px, 1.8vw, 32px);
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-weight: bold;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-        }
-
-        .btn:hover {
-            background-color: #444444;
-            transform: translateY(-2px);
-        }
-
-        .btn.active {
-            background-color: var(--accent);
-            color: #ffffff;
-        }
-
-        .btn-primary {
-            background-color: var(--accent);
-            color: white;
-        }
-        
-        .btn-primary:hover {
-            background-color: var(--accent-hover);
-        }
-
-        /* 左半部：時程區 */
-        .left-panel {
-            flex: 5.5;
-            padding: 2.5vw 3vw;
             display: flex;
             flex-direction: column;
-            border-right: 2px solid var(--border-color);
-            background-color: var(--bg-color);
-            height: 100vh;
+            overflow: hidden; /* 強制不出現捲軸，單頁呈現 */
         }
 
-        /* 頂部標頭容器 (使用 Flexbox 避免按鈕遮擋內容) */
-        .left-header-container {
+        /* ================= 頂部控制列 ================= */
+        .top-bar {
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-end;
             align-items: center;
-            width: 100%;
-            margin-bottom: 2vh;
+            height: 8vh;
+            padding: 0 2vw;
+            background-color: var(--accent-color); /* 使用蘭州藍 */
+            border-bottom: 3px solid var(--accent-hover);
+            gap: 1.5vw;
         }
 
-        .right-header-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 2.5vw 3vw 0 3vw;
-            width: 100%;
-            gap: 2vw;
-        }
-
-        /* 標題可編輯區域 */
-        .page-title {
-            font-size: clamp(36px, 3.5vw, 60px);
+        .exam-title {
+            font-size: clamp(1.2rem, 2vw, 3rem);
+            color: #ffffff; /* 藍底配白字 */
+            margin-right: auto;
+            margin-left: auto;
+            letter-spacing: 2px;
             font-weight: bold;
-            color: #ffffff;
-            padding: 1vh 1vw;
-            border-bottom: 2px solid var(--border-color);
-            outline: none;
-            transition: background 0.2s;
-            text-align: center;
-            flex-grow: 1;
-            margin: 0;
-        }
-        
-        .page-title:focus {
-            background-color: #2a2a2a;
-            border-bottom-color: var(--accent);
-            border-radius: 8px 8px 0 0;
         }
 
-        .day-tabs {
+        .top-controls {
             display: flex;
+            align-items: center;
             gap: 1vw;
         }
 
-        /* 表格區域高度自適應延展 */
-        .table-container {
+        /* 頂部按鈕特殊樣式 (線條按鈕) */
+        .top-controls button {
+            background-color: transparent;
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            padding: 0.8vh 1.5vw;
+            font-size: clamp(1rem, 1.5vw, 2rem);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            letter-spacing: 1px;
+        }
+
+        .top-controls button:hover { 
+            background-color: rgba(255, 255, 255, 0.2); 
+            border-color: #ffffff;
+        }
+
+        /* 一般按鈕預設樣式 */
+        button {
+            background-color: var(--btn-bg);
+            color: var(--accent-color);
+            border: 1px solid var(--border-color);
+            padding: 0.8vh 1.5vw;
+            font-size: clamp(1rem, 1.5vw, 2rem);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            letter-spacing: 1px;
+        }
+        button:hover { background-color: var(--btn-hover); }
+        button.active { background-color: var(--accent-color); border-color: var(--accent-color); color: #fff; }
+
+        /* ================= 主內容區 ================= */
+        .main-content {
+            display: flex;
             flex: 1;
+            padding: 2vh 2vw;
+            gap: 2vw;
+            height: 92vh; /* 扣除 top-bar 的 8vh */
+        }
+
+        /* --- 左半部：時程表 --- */
+        .left-panel {
+            flex: 5.5;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
-            overflow: hidden;
-            margin-top: 1vh;
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 2vh 2vw;
+            box-shadow: 0 4px 15px rgba(43, 112, 165, 0.05); /* 帶有極淡藍色的陰影 */
+            height: 100%; /* 填滿剩餘高度 */
         }
 
-        table {
-            width: 100%;
-            height: 100%;
-            border-collapse: collapse;
-            font-size: clamp(24px, 2.8vw, 50px); /* 極致大字體 */
+        .day-switch {
+            display: flex;
+            gap: 1vw;
+            height: 7vh;
+            margin-bottom: 1.5vh;
         }
 
-        thead {
-            height: 6vh;
-        }
-
-        th {
+        .day-switch button { 
+            flex: 1; 
+            font-size: clamp(1.5rem, 2vw, 3rem); 
+            padding: 0; 
+            font-weight: bold;
             color: var(--text-muted);
-            border-bottom: 2px solid var(--border-color);
-            padding-bottom: 1vh;
-            text-align: left;
-            font-size: clamp(20px, 2.2vw, 40px);
+        }
+        .day-switch button.active {
+            color: #ffffff;
         }
 
-        tbody tr {
-            height: calc(100% / 7); /* 均分高度，確保填滿畫面 */
+        /* 時程列表容器：使用 flex-grow 填滿空間 */
+        .schedule-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1vh;
+            flex: 1;
+            min-height: 0; /* 防止內部元素撐開父容器造成跑版 */
         }
 
-        td {
-            padding: 0 0.5vw;
-            border-bottom: 1px solid var(--border-color);
-            transition: background-color 0.3s, color 0.3s;
+        /* 每一列：均分剩餘空間，高度自適應 */
+        .schedule-row {
+            flex: 1; 
+            display: flex;
+            align-items: center;
+            padding: 0 2vw;
+            border-radius: 6px;
+            background-color: var(--element-bg);
+            border: 1px solid var(--border-color);
+            border-left: 5px solid var(--border-color); /* 預設左側粗邊框 */
+            transition: all 0.3s;
+            /* 根據可用高度與寬度動態調整字體，避免文字太大造成跑版 */
+            font-size: clamp(1.5rem, min(3.5vh, 2.5vw), 4rem); 
         }
 
-        .col-period { width: 22%; font-weight: bold; }
-        .col-time { width: 38%; color: #bbbbbb; }
-        .col-subject { width: 40%; }
+        .schedule-row .period { width: 15%; color: var(--text-muted); font-size: 0.9em; }
+        .schedule-row .time { width: 40%; text-align: center; font-family: monospace, 'BiauKai'; letter-spacing: 1px;}
+        .schedule-row .subject { width: 45%; text-align: right; font-weight: bold; color: var(--text-main); }
 
-        /* 正在進行的時段高亮 (無脈衝動畫) */
-        .highlight {
+        /* 醒目提醒 (Highlight) - 官網橘黃色高亮 */
+        .schedule-row.highlight {
             background-color: var(--highlight-bg);
             color: var(--highlight-text);
+            border-color: var(--highlight-border);
+            border-left: 8px solid var(--highlight-border); /* 強調左側邊框 */
+            box-shadow: 0 4px 12px rgba(242, 166, 44, 0.15);
+            transform: scale(1.01); /* 微微放大凸顯 */
         }
-        .highlight td {
-            border-bottom: 1px solid transparent;
-        }
-        .highlight td:first-child { border-top-left-radius: 8px; border-bottom-left-radius: 8px; }
-        .highlight td:last-child { border-top-right-radius: 8px; border-bottom-right-radius: 8px; }
-        
-        .highlight .col-time {
-            color: #e0f2fe; /* 稍微提亮時間顏色 */
-        }
+        .schedule-row.highlight .period { color: #c47600; font-weight: bold; }
+        .schedule-row.highlight .time { font-weight: bold; color: #b06500; }
+        .schedule-row.highlight .subject { color: var(--accent-color); }
 
-        /* 右半部：時鐘與人數區 */
+        /* --- 右半部：時鐘與人數 --- */
         .right-panel {
             flex: 4.5;
             display: flex;
             flex-direction: column;
+            justify-content: center;
+            align-items: center;
             background-color: var(--panel-bg);
-            position: relative;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 2vh 2vw;
+            box-shadow: 0 4px 15px rgba(43, 112, 165, 0.05);
+            height: 100%;
         }
 
-        .time-container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding-top: 5vh;
-        }
-
-        .clock-display {
-            display: flex;
-            align-items: baseline;
-            justify-content: center;
-            white-space: nowrap;
-        }
-
-        .ampm {
-            font-size: clamp(36px, 4vw, 70px);
-            font-weight: bold;
-            color: var(--text-muted);
-            margin-right: 1.5vw;
-        }
-
-        .hours-mins {
-            font-size: clamp(100px, 12vw, 240px); /* 超大時間字體 */
-            font-weight: bold;
-            line-height: 1;
-            letter-spacing: -2px;
-        }
-
-        .seconds {
-            font-size: clamp(50px, 6vw, 120px); /* 秒數較小 */
-            color: var(--text-muted);
-            margin-left: 0.5vw;
-        }
-
-        .attendance-container {
-            margin-top: 8vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 3vh;
-            background: rgba(0,0,0,0.2);
-            padding: 5vh 5vw;
-            border-radius: 24px;
-            width: 80%;
-            box-shadow: inset 0 4px 10px rgba(0,0,0,0.3);
-        }
-
-        /* 實到人數與應到人數 (實到在上) */
-        .attendance-item {
-            font-size: clamp(36px, 4vw, 70px);
-            font-weight: bold;
-            display: flex;
-            justify-content: space-between;
+        .clock-container {
+            text-align: center;
+            margin-bottom: 8vh;
             width: 100%;
         }
 
-        .actual-text { color: #facc15; } /* 實到人數用黃色突顯 */
-        .expected-text { color: #94a3b8; }
-
-        .attendance-val {
-            font-size: clamp(48px, 5.5vw, 90px);
-            margin-left: 2vw;
+        .clock-ampm { font-size: clamp(2rem, 4vw, 5rem); color: var(--text-muted); margin-bottom: 0; }
+        .clock-time { 
+            font-size: clamp(6rem, 12vw, 15rem); 
+            font-weight: bold; 
+            line-height: 1; 
+            margin: 1vh 0; 
+            color: var(--accent-color); /* 時間用蘭州藍 */
         }
+        .clock-sec { font-size: clamp(3rem, 5vw, 6rem); color: var(--text-muted); margin-left: 1vw; }
 
-        /* 彈出式對話框 (Modal) */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            z-index: 1000;
+        .attendance-container {
+            display: flex;
+            gap: 4vw;
             justify-content: center;
-            align-items: center;
-            backdrop-filter: blur(5px);
-        }
-
-        .modal-content {
-            background-color: var(--panel-bg);
-            padding: 3vw 4vw;
-            border-radius: 16px;
-            width: 70vw;
-            max-width: 900px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            width: 90%;
+            background-color: var(--element-bg);
+            padding: 4vh 0;
+            border-radius: 8px;
             border: 1px solid var(--border-color);
-            display: flex;
-            flex-direction: column;
-            max-height: 90vh; /* 限制最大高度，以防超出螢幕 */
         }
 
-        .modal-title {
-            font-size: clamp(24px, 3vw, 48px);
-            margin-bottom: 2vh;
-            color: #ffffff;
+        .attendance-box {
             text-align: center;
-            flex-shrink: 0;
-        }
-
-        /* 讓對話框內容可滑動 (Scrollable) */
-        .modal-body {
-            overflow-y: auto;
-            flex-grow: 1;
-            padding-right: 1.5vw;
-            margin-bottom: 1vh;
-            /* 針對大屏觸控優化的滾動條 */
-            scrollbar-width: thin;
-            scrollbar-color: var(--border-color) var(--bg-color);
-        }
-
-        /* Webkit 瀏覽器自訂滾動條樣式 */
-        .modal-body::-webkit-scrollbar {
-            width: 12px;
-        }
-        .modal-body::-webkit-scrollbar-track {
-            background: rgba(0,0,0,0.2);
-            border-radius: 6px;
-        }
-        .modal-body::-webkit-scrollbar-thumb {
-            background-color: var(--border-color);
-            border-radius: 6px;
-        }
-        .modal-body::-webkit-scrollbar-thumb:hover {
-            background-color: var(--text-muted);
-        }
-
-        .form-group {
-            margin-bottom: 2.5vh;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .form-group label {
-            font-size: clamp(18px, 2.2vw, 36px);
             flex: 1;
+        }
+
+        .attendance-label { 
+            font-size: clamp(1.5rem, 2.5vw, 4rem); 
+            color: var(--text-muted); 
+            margin-bottom: 1.5vh; 
+            letter-spacing: 2px;
+        }
+        .attendance-value { 
+            font-size: clamp(3rem, 6vw, 8rem); 
+            font-weight: bold; 
+            color: var(--accent-color); 
+        }
+
+        /* ================= 彈出視窗區 (Modals) ================= */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 30, 50, 0.5); /* 帶有微藍色的遮罩 */
+            display: none; justify-content: center; align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(3px);
+        }
+
+        .modal-box {
+            background: var(--modal-bg);
+            padding: 3vh 3vw;
+            border-radius: 6px;
+            border: 2px solid var(--accent-color);
+            border-top: 6px solid var(--accent-color); /* 頂部加粗強調 */
+            width: 60vw;
+            max-width: 900px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            display: flex; flex-direction: column;
+        }
+
+        .modal-title { 
+            font-size: clamp(1.8rem, 2.5vw, 3rem); 
+            margin-top: 0; 
+            margin-bottom: 2vh; 
+            border-bottom: 1px solid var(--border-color); 
+            padding-bottom: 1vh; 
+            color: var(--accent-color);
+        }
+        
+        .modal-content {
+            font-size: clamp(1.2rem, 1.8vw, 2.5rem);
+            margin-bottom: 3vh;
+        }
+
+        .scrollable-content {
+            max-height: 60vh;
+            overflow-y: auto;
+            padding-right: 1vw;
+        }
+        
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-color); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--accent-color); }
+
+        .modal-actions { display: flex; justify-content: flex-end; gap: 1vw; }
+        .modal-actions button { font-size: clamp(1.2rem, 1.8vw, 2.5rem); padding: 1vh 2vw; }
+        .btn-primary { background-color: var(--accent-color); border-color: var(--accent-color); color: #fff;}
+        .btn-primary:hover { background-color: var(--accent-hover); color: #fff; border-color: var(--accent-hover); }
+
+        input[type="number"], input[type="password"], input[type="text"] {
+            width: 100%;
+            padding: 1.5vh 1vw;
+            font-size: clamp(1.2rem, 2vw, 2.5rem);
+            background: var(--element-bg);
+            border: 1px solid var(--border-color);
             color: var(--text-main);
-        }
-
-        .form-group input {
-            flex: 2;
-            background-color: var(--bg-color);
-            border: 2px solid var(--border-color);
-            color: white;
-            font-size: clamp(20px, 2.5vw, 40px);
-            padding: 1.5vh 1vw;
-            border-radius: 8px;
-            transition: border-color 0.2s;
-        }
-
-        .form-group input:focus {
-            outline: none;
-            border-color: var(--accent);
-        }
-
-        .error-msg {
-            color: var(--danger);
-            font-size: clamp(16px, 2vw, 32px);
+            border-radius: 4px;
             margin-bottom: 2vh;
-            display: none;
-            background: rgba(239, 68, 68, 0.1);
-            padding: 1.5vh 1vw;
-            border-radius: 8px;
-            text-align: center;
-            flex-shrink: 0;
         }
+        input:focus { outline: none; border-color: var(--accent-color); box-shadow: 0 0 5px rgba(43, 112, 165, 0.3); }
 
-        .modal-footer {
-            margin-top: 2vh;
+        .edit-table { width: 100%; border-collapse: collapse; margin-bottom: 2vh; }
+        /* 【修復】加入 white-space: nowrap 防止「第一節」換行 */
+        .edit-table th, .edit-table td { padding: 1vh; border: 1px solid var(--border-color); text-align: center; white-space: nowrap; }
+        .edit-table th { background-color: var(--table-th-bg); color: var(--accent-color); }
+        .edit-table input[type="text"] { font-size: clamp(1rem, 1.5vw, 2rem); padding: 0.5vh; margin-bottom: 0; text-align: center; }
+        
+        .edit-day-title { font-size: clamp(1.5rem, 2vw, 2.5rem); font-weight: bold; margin: 2vh 0 1vh; color: var(--accent-color); }
+
+        .input-group { margin-bottom: 2vh; }
+        .input-group label { display: block; font-size: clamp(1.2rem, 2vw, 2.5rem); margin-bottom: 1vh; color: var(--text-main); }
+
+        /* 雙欄表單配置 */
+        .form-row {
             display: flex;
-            justify-content: flex-end;
-            gap: 1.5vw;
-            flex-shrink: 0;
-            padding-top: 2vh;
-            border-top: 1px solid var(--border-color);
+            gap: 2vw;
+            margin-bottom: 1vh;
+        }
+        .form-col {
+            flex: 1;
+        }
+        .form-col .input-group {
+            margin-bottom: 0;
         }
 
     </style>
 </head>
 <body>
 
-    <!-- 左側時程面板 -->
-    <div class="left-panel">
-        <div class="left-header-container">
-            <div class="day-tabs">
-                <button class="btn active" id="btn-day1" onclick="switchDay(1)">第一天</button>
-                <button class="btn" id="btn-day2" onclick="switchDay(2)">第二天</button>
-            </div>
-            <button class="btn" onclick="promptPassword()" style="flex-shrink: 0;">編輯科目</button>
-        </div>
-
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th class="col-period">節次</th>
-                        <th class="col-time">時間</th>
-                        <th class="col-subject">科目</th>
-                    </tr>
-                </thead>
-                <tbody id="schedule-body">
-                    <!-- JavaScript 動態生成表格內容 -->
-                </tbody>
-            </table>
+    <!-- 頂部控制列 -->
+    <div class="top-bar">
+        <!-- 標題加入 id，方便動態修改 -->
+        <span class="exam-title" id="main-exam-title">蘭州國中115學年度第一次段考</span>
+        <div class="top-controls">
+            <button id="btn-set-attendance">設定人數</button>
+            <button id="btn-edit-subjects">編輯科目</button>
         </div>
     </div>
 
-    <!-- 右側時間與人數面板 -->
-    <div class="right-panel">
-        <div class="right-header-container">
-            <h1 class="page-title" contenteditable="true" spellcheck="false">蘭州國中第X次段考</h1>
-            <button class="btn" onclick="openAttendanceModal()" style="flex-shrink: 0;">設定人數</button>
+    <!-- 主內容區 -->
+    <div class="main-content">
+        <!-- 左側：時程表 -->
+        <div class="left-panel">
+            <div class="day-switch">
+                <button id="btn-day1" class="active" onclick="switchDay(1)">第一天</button>
+                <button id="btn-day2" onclick="switchDay(2)">第二天</button>
+            </div>
+            <div class="schedule-list" id="schedule-display">
+                <!-- JavaScript 動態產生 -->
+            </div>
         </div>
 
-        <div class="time-container">
-            <div class="clock-display">
-                <span class="ampm" id="clock-ampm">上午</span>
-                <span class="hours-mins" id="clock-hm">12:00</span>
-                <span class="seconds" id="clock-s">:00</span>
+        <!-- 右側：時鐘與人數 -->
+        <div class="right-panel">
+            <div class="clock-container">
+                <div class="clock-ampm" id="clock-ampm">上午</div>
+                <div class="clock-time">
+                    <span id="clock-hm">00:00</span><span class="clock-sec" id="clock-s">00</span>
+                </div>
             </div>
             
             <div class="attendance-container">
-                <!-- 實到與應到位置對調 (實到在上) -->
-                <div class="attendance-item actual-text">
-                    <span>實到人數：</span>
-                    <span class="attendance-val" id="display-actual">30</span>
+                <div class="attendance-box">
+                    <div class="attendance-label">實到人數</div>
+                    <div class="attendance-value" id="disp-actual">0</div>
                 </div>
-                <div class="attendance-item expected-text">
-                    <span>應到人數：</span>
-                    <span class="attendance-val" id="display-expected">30</span>
+                <div class="attendance-box">
+                    <div class="attendance-label">應到人數</div>
+                    <div class="attendance-value" id="disp-total">0</div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- 編輯科目 Modal (具備滑動軸) -->
-    <div class="modal-overlay" id="subject-modal">
-        <div class="modal-content">
-            <h2 class="modal-title" id="subject-modal-title">編輯第一天科目</h2>
-            <!-- modal-body 是可滑動的區域 -->
-            <div class="modal-body" id="subject-inputs-container">
-                <!-- 動態生成 Input -->
-            </div>
-            <div class="modal-footer">
-                <button class="btn" onclick="closeModal('subject-modal')">取消</button>
-                <button class="btn btn-primary" onclick="saveSubjects()">儲存</button>
+    <!-- ================= 彈出視窗區 (Modals) ================= -->
+    <div class="modal-overlay" id="msg-modal">
+        <div class="modal-box" style="width: 40vw;">
+            <h2 class="modal-title" id="msg-title">提示</h2>
+            <div class="modal-content" id="msg-content"></div>
+            <div class="modal-actions">
+                <button class="btn-primary" onclick="closeModal('msg-modal')">確定</button>
             </div>
         </div>
     </div>
 
-    <!-- 設定人數 Modal -->
+    <div class="modal-overlay" id="pwd-modal">
+        <div class="modal-box" style="width: 40vw;">
+            <h2 class="modal-title">權限驗證</h2>
+            <div class="modal-content">
+                <label style="display:block; margin-bottom:1vh;">請輸入編輯密碼：</label>
+                <input type="password" id="pwd-input" placeholder="輸入密碼">
+            </div>
+            <div class="modal-actions">
+                <button onclick="closeModal('pwd-modal')">取消</button>
+                <button class="btn-primary" onclick="verifyPassword()">確認</button>
+            </div>
+        </div>
+    </div>
+
     <div class="modal-overlay" id="attendance-modal">
-        <div class="modal-content">
+        <div class="modal-box" style="width: 40vw;">
             <h2 class="modal-title">設定人數</h2>
-            <div class="error-msg" id="attendance-error"></div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>實到人數：</label>
+            <div class="modal-content">
+                <div class="input-group">
+                    <label>實到人數 (不可為負)：</label>
                     <input type="number" id="input-actual" min="0">
                 </div>
-                <div class="form-group">
-                    <label>應到人數：</label>
-                    <input type="number" id="input-expected" min="0">
+                <div class="input-group">
+                    <label>應到人數 (不可為負)：</label>
+                    <input type="number" id="input-total" min="0">
                 </div>
             </div>
-            <div class="modal-footer">
-                <button class="btn" onclick="closeModal('attendance-modal')">取消</button>
-                <button class="btn btn-primary" onclick="saveAttendance()">儲存</button>
+            <div class="modal-actions">
+                <button onclick="closeModal('attendance-modal')">取消</button>
+                <button class="btn-primary" onclick="saveAttendance()">儲存</button>
             </div>
         </div>
     </div>
 
-    <!-- 密碼輸入 Modal -->
-    <div class="modal-overlay" id="password-modal">
-        <div class="modal-content" style="width: 40vw; max-width: 600px;">
-            <h2 class="modal-title">需要權限</h2>
-            <div class="error-msg" id="password-error"></div>
-            <div class="modal-body" style="overflow: visible;">
-                <div class="form-group" style="justify-content: center; margin-bottom: 0;">
-                    <input type="password" id="input-password" placeholder="請輸入密碼以編輯科目" style="width: 100%; text-align: center;" onkeypress="if(event.key === 'Enter') verifyPassword()">
-                </div>
+    <div class="modal-overlay" id="edit-modal">
+        <div class="modal-box" style="width: 60vw;">
+            <h2 class="modal-title">編輯基本資訊與科目</h2>
+            <div class="modal-content scrollable-content" id="edit-content">
+                <!-- 表單與表格由 JS 動態產生 -->
             </div>
-            <div class="modal-footer">
-                <button class="btn" onclick="closeModal('password-modal')">取消</button>
-                <button class="btn btn-primary" onclick="verifyPassword()">確認</button>
+            <div class="modal-actions">
+                <button onclick="closeModal('edit-modal')">取消</button>
+                <button class="btn-primary" onclick="saveSubjects()">儲存設定</button>
             </div>
         </div>
     </div>
 
+    <!-- ================= JavaScript 邏輯 ================= -->
     <script>
-        // --- 核心資料狀態 ---
-        let currentDay = 1;
-        let expectedCount = 30;
-        let actualCount = 30;
-
-        const scheduleData = {
-            1: [
-                { id: "1-1", period: "第一節", start: "08:30", end: "09:15", subject: "自習" },
-                { id: "1-2", period: "第二節", start: "09:25", end: "10:10", subject: "數學04" },
-                { id: "1-3", period: "第三節", start: "10:20", end: "11:05", subject: "自習" },
-                { id: "1-4", period: "第四節", start: "11:15", end: "12:00", subject: "英語02" },
-                { id: "1-5", period: "第五節", start: "13:15", end: "14:05", subject: "作文" },
-                { id: "1-6", period: "第六節", start: "14:20", end: "15:05", subject: "自習" },
-                { id: "1-7", period: "第七節", start: "15:15", end: "16:00", subject: "理化12" }
+        const defaultSchedule = {
+            day1: [
+                { period: "第一節", start: "08:30", end: "09:15", subject: "自習" },
+                { period: "第二節", start: "09:25", end: "10:10", subject: "數學04" },
+                { period: "第三節", start: "10:20", end: "11:05", subject: "自習" },
+                { period: "第四節", start: "11:15", end: "12:00", subject: "英語02" },
+                { period: "第五節", start: "13:15", end: "14:05", subject: "作文" },
+                { period: "第六節", start: "14:20", end: "15:05", subject: "自習" },
+                { period: "第七節", start: "15:15", end: "16:00", subject: "理化12" }
             ],
-            2: [
-                { id: "2-1", period: "第一節", start: "08:30", end: "09:00", subject: "自習" },
-                { id: "2-2", period: "第二節", start: "09:00", end: "10:10", subject: "公民06;歷史08;地理09" },
-                { id: "2-3", period: "第三節", start: "10:20", end: "11:05", subject: "自習" },
-                { id: "2-4", period: "第四節", start: "11:15", end: "12:00", subject: "國文01" }
+            day2: [
+                { period: "第一節", start: "08:30", end: "09:00", subject: "自習" },
+                { period: "第二節", start: "09:00", end: "10:10", subject: "公民06;歷史08;地理09" },
+                { period: "第三節", start: "10:20", end: "11:05", subject: "自習" },
+                { period: "第四節", start: "11:15", end: "12:00", subject: "國文01" }
             ]
         };
 
-        // --- 初始化 ---
-        function init() {
-            renderSchedule();
-            updateClock();
-            setInterval(updateClock, 500); // 每半秒更新一次時鐘與高亮狀態
+        let currentDay = 1;
+        let scheduleData = JSON.parse(localStorage.getItem('lcjh_schedule')) || defaultSchedule;
+        let attendanceData = JSON.parse(localStorage.getItem('lcjh_attendance')) || { actual: 0, total: 0 };
+        // 新增標題資訊，預設為 112學年度，第一次
+        let examInfo = JSON.parse(localStorage.getItem('lcjh_exam_info')) || { year: "115", exam: "一" };
+
+        window.onload = () => {
+            updateAttendanceDisplay();
+            updateExamTitleDisplay();
+            switchDay(1);
+            setInterval(updateClockAndHighlight, 1000);
+            updateClockAndHighlight();
+        };
+
+        // 更新頂部大標題
+        function updateExamTitleDisplay() {
+            document.getElementById('main-exam-title').innerText = `蘭州國中${examInfo.year}學年度第${examInfo.exam}次段考`;
         }
 
-        // --- 渲染時程表 ---
-        function renderSchedule() {
-            const tbody = document.getElementById('schedule-body');
-            tbody.innerHTML = '';
-            
-            const dayData = scheduleData[currentDay];
-            dayData.forEach((item, index) => {
-                const tr = document.createElement('tr');
-                tr.id = `row-${currentDay}-${index}`;
-                tr.innerHTML = `
-                    <td class="col-period">${item.period}</td>
-                    <td class="col-time">${item.start} ~ ${item.end}</td>
-                    <td class="col-subject">${item.subject}</td>
-                `;
-                tbody.appendChild(tr);
-            });
-            checkHighlight(); // 渲染完立即檢查高亮
-        }
-
-        // --- 切換天數 ---
         function switchDay(day) {
             currentDay = day;
             document.getElementById('btn-day1').classList.toggle('active', day === 1);
@@ -535,153 +482,195 @@
             renderSchedule();
         }
 
-        // --- 時鐘與高亮邏輯 ---
-        function updateClock() {
+        function renderSchedule() {
+            const container = document.getElementById('schedule-display');
+            container.innerHTML = '';
+            const data = currentDay === 1 ? scheduleData.day1 : scheduleData.day2;
+            
+            data.forEach((item) => {
+                const row = document.createElement('div');
+                row.className = 'schedule-row';
+                row.dataset.start = item.start;
+                row.dataset.end = item.end;
+                
+                row.innerHTML = `
+                    <div class="period">${item.period}</div>
+                    <div class="time">${item.start} ~ ${item.end}</div>
+                    <div class="subject">${item.subject}</div>
+                `;
+                container.appendChild(row);
+            });
+            updateClockAndHighlight();
+        }
+
+        function updateClockAndHighlight() {
             const now = new Date();
             let h = now.getHours();
             let m = now.getMinutes();
             let s = now.getSeconds();
 
-            // 12小時制處理
             const ampm = h >= 12 ? '下午' : '上午';
-            let displayH = h % 12;
-            displayH = displayH ? displayH : 12; // 0點顯示為12
-            
-            // 補零
-            const displayM = m < 10 ? '0' + m : m;
-            const displayS = s < 10 ? '0' + s : s;
+            let h12 = h % 12;
+            h12 = h12 ? h12 : 12;
 
             document.getElementById('clock-ampm').innerText = ampm;
-            document.getElementById('clock-hm').innerText = displayH + ':' + displayM;
-            document.getElementById('clock-s').innerText = ':' + displayS;
+            document.getElementById('clock-hm').innerText = `${pad(h12)}:${pad(m)}`;
+            document.getElementById('clock-s').innerText = pad(s);
 
-            checkHighlight(h, m);
+            const currentMinutes = h * 60 + m;
+
+            const rows = document.querySelectorAll('.schedule-row');
+            rows.forEach(row => {
+                const startStr = row.dataset.start;
+                const endStr = row.dataset.end;
+                
+                const startMins = timeToMinutes(startStr);
+                const endMins = timeToMinutes(endStr);
+
+                if (currentMinutes >= startMins && currentMinutes < endMins) {
+                    row.classList.add('highlight');
+                } else {
+                    row.classList.remove('highlight');
+                }
+            });
         }
 
-        // 將 HH:MM 轉換為從00:00開始的分鐘數，方便比較
+        function pad(num) { return num < 10 ? '0' + num : num; }
+        
         function timeToMinutes(timeStr) {
             const parts = timeStr.split(':');
-            return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+            return parseInt(parts[0]) * 60 + parseInt(parts[1]);
         }
 
-        function checkHighlight(currentH = new Date().getHours(), currentM = new Date().getMinutes()) {
-            const currentMins = currentH * 60 + currentM;
-            const dayData = scheduleData[currentDay];
-
-            dayData.forEach((item, index) => {
-                const startMins = timeToMinutes(item.start);
-                const endMins = timeToMinutes(item.end);
-                const row = document.getElementById(`row-${currentDay}-${index}`);
-                
-                if (row) {
-                    // 判斷是否在該節次的區間內 (包含開始，不包含結束的那一分鐘)
-                    if (currentMins >= startMins && currentMins < endMins) {
-                        row.classList.add('highlight');
-                    } else {
-                        row.classList.remove('highlight');
-                    }
-                }
-            });
+        function showModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        
+        function showMessage(title, text) {
+            document.getElementById('msg-title').innerText = title;
+            document.getElementById('msg-content').innerText = text;
+            showModal('msg-modal');
         }
 
-        // --- Modal 共用邏輯 ---
-        function closeModal(modalId) {
-            document.getElementById(modalId).style.display = 'none';
-        }
-
-        // --- 密碼驗證邏輯 ---
-        function promptPassword() {
-            document.getElementById('password-error').style.display = 'none';
-            document.getElementById('input-password').value = '';
-            document.getElementById('password-modal').style.display = 'flex';
-            setTimeout(() => document.getElementById('input-password').focus(), 100);
-        }
-
-        function verifyPassword() {
-            const pwd = document.getElementById('input-password').value;
-            if (pwd === 'lcjh123') {
-                closeModal('password-modal');
-                openSubjectModal();
-            } else {
-                const errorDiv = document.getElementById('password-error');
-                errorDiv.innerText = "密碼錯誤，請重新輸入";
-                errorDiv.style.display = 'block';
-                document.getElementById('input-password').value = '';
-                document.getElementById('input-password').focus();
-            }
-        }
-
-        // --- 編輯科目功能 ---
-        function openSubjectModal() {
-            document.getElementById('subject-modal-title').innerText = `編輯第 ${currentDay} 天科目`;
-            const container = document.getElementById('subject-inputs-container');
-            container.innerHTML = '';
-
-            scheduleData[currentDay].forEach((item, index) => {
-                const div = document.createElement('div');
-                div.className = 'form-group';
-                div.innerHTML = `
-                    <label>${item.period} (${item.start}-${item.end})</label>
-                    <input type="text" id="subj-input-${index}" value="${item.subject}">
-                `;
-                container.appendChild(div);
-            });
-
-            document.getElementById('subject-modal').style.display = 'flex';
-        }
-
-        function saveSubjects() {
-            scheduleData[currentDay].forEach((item, index) => {
-                const input = document.getElementById(`subj-input-${index}`);
-                if (input) {
-                    item.subject = input.value;
-                }
-            });
-            closeModal('subject-modal');
-            renderSchedule();
-        }
-
-        // --- 設定人數功能 ---
-        function openAttendanceModal() {
-            document.getElementById('attendance-error').style.display = 'none';
-            document.getElementById('input-actual').value = actualCount;
-            document.getElementById('input-expected').value = expectedCount;
-            document.getElementById('attendance-modal').style.display = 'flex';
-            setTimeout(() => document.getElementById('input-actual').focus(), 100);
-        }
+        document.getElementById('btn-set-attendance').onclick = () => {
+            document.getElementById('input-actual').value = attendanceData.actual;
+            document.getElementById('input-total').value = attendanceData.total;
+            showModal('attendance-modal');
+        };
 
         function saveAttendance() {
-            const actualInput = parseInt(document.getElementById('input-actual').value, 10);
-            const expectedInput = parseInt(document.getElementById('input-expected').value, 10);
-            const errorDiv = document.getElementById('attendance-error');
+            const actual = parseInt(document.getElementById('input-actual').value);
+            const total = parseInt(document.getElementById('input-total').value);
 
-            if (isNaN(actualInput) || isNaN(expectedInput)) {
-                errorDiv.innerText = "請輸入有效的數字";
-                errorDiv.style.display = 'block';
+            if (isNaN(actual) || isNaN(total)) {
+                showMessage('錯誤', '請輸入有效的數字！');
                 return;
             }
-            if (actualInput < 0 || expectedInput < 0) {
-                errorDiv.innerText = "人數不可為負數";
-                errorDiv.style.display = 'block';
+            if (actual < 0 || total < 0) {
+                showMessage('錯誤', '人數不可為負數！');
                 return;
             }
-            if (actualInput > expectedInput) {
-                errorDiv.innerText = "實到人數不能超過應到人數";
-                errorDiv.style.display = 'block';
+            if (actual > total) {
+                showMessage('設定錯誤', '實到人數不能超過應到人數！');
                 return;
             }
 
-            actualCount = actualInput;
-            expectedCount = expectedInput;
-
-            document.getElementById('display-actual').innerText = actualCount;
-            document.getElementById('display-expected').innerText = expectedCount;
-
+            attendanceData.actual = actual;
+            attendanceData.total = total;
+            localStorage.setItem('lcjh_attendance', JSON.stringify(attendanceData));
+            updateAttendanceDisplay();
             closeModal('attendance-modal');
         }
 
-        // 啟動程式
-        window.onload = init;
+        function updateAttendanceDisplay() {
+            document.getElementById('disp-actual').innerText = attendanceData.actual;
+            document.getElementById('disp-total').innerText = attendanceData.total;
+        }
+
+        document.getElementById('btn-edit-subjects').onclick = () => {
+            document.getElementById('pwd-input').value = '';
+            showModal('pwd-modal');
+        };
+
+        function verifyPassword() {
+            const pwd = document.getElementById('pwd-input').value;
+            // 預設密碼 lcjh123
+            if (pwd === 'lcjh123') {
+                closeModal('pwd-modal');
+                openEditSubjectsModal();
+            } else {
+                showMessage('驗證失敗', '密碼錯誤，請重新輸入。');
+            }
+        }
+
+        function openEditSubjectsModal() {
+            const container = document.getElementById('edit-content');
+            let html = '';
+            
+            // 【新增】動態產生學年度與段考次數輸入區塊
+            html += `
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="input-group">
+                            <label>學年度 (如: 115)：</label>
+                            <input type="text" id="edit-exam-year" value="${examInfo.year}">
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="input-group">
+                            <label>段考次數：</label>
+                            <input type="text" id="edit-exam-number" value="${examInfo.exam}">
+                        </div>
+                    </div>
+                </div>
+                <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 2vh 0;">
+            `;
+
+            html += `<div class="edit-day-title">第一天</div>`;
+            html += `<table class="edit-table"><tr><th>節次</th><th>時間</th><th>科目名稱</th></tr>`;
+            scheduleData.day1.forEach((item, idx) => {
+                html += `<tr>
+                            <td>${item.period}</td>
+                            <td>${item.start} ~ ${item.end}</td>
+                            <td><input type="text" id="edit-d1-${idx}" value="${item.subject}"></td>
+                         </tr>`;
+            });
+            html += `</table>`;
+
+            html += `<div class="edit-day-title">第二天</div>`;
+            html += `<table class="edit-table"><tr><th>節次</th><th>時間</th><th>科目名稱</th></tr>`;
+            scheduleData.day2.forEach((item, idx) => {
+                html += `<tr>
+                            <td>${item.period}</td>
+                            <td>${item.start} ~ ${item.end}</td>
+                            <td><input type="text" id="edit-d2-${idx}" value="${item.subject}"></td>
+                         </tr>`;
+            });
+            html += `</table>`;
+
+            container.innerHTML = html;
+            showModal('edit-modal');
+        }
+
+        function saveSubjects() {
+            // 儲存學年度與次數
+            examInfo.year = document.getElementById('edit-exam-year').value;
+            examInfo.exam = document.getElementById('edit-exam-number').value;
+            localStorage.setItem('lcjh_exam_info', JSON.stringify(examInfo));
+            updateExamTitleDisplay();
+
+            // 儲存各節次科目
+            scheduleData.day1.forEach((item, idx) => {
+                item.subject = document.getElementById(`edit-d1-${idx}`).value;
+            });
+            scheduleData.day2.forEach((item, idx) => {
+                item.subject = document.getElementById(`edit-d2-${idx}`).value;
+            });
+
+            localStorage.setItem('lcjh_schedule', JSON.stringify(scheduleData));
+            renderSchedule();
+            closeModal('edit-modal');
+            showMessage('成功', '標題與科目更新完成！');
+        }
 
     </script>
 </body>
